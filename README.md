@@ -10,6 +10,8 @@ Include this line in your PowerShell Startup script, usually
 `Microsoft.Powershell_profile.ps1`:
 
 ```powershell
+$env:PDUSER = "SecureChainKitUser"
+$env:PDPASS = "changeme"
 . C:\Path-To\Secure-ChainKit.ps1
 ```
 
