@@ -85,8 +85,8 @@ Function Register-CKFile
         return
     }
 
-    $Content = Get-Content -Path $Path
-    $contentsHash = Get-StringHash $Content $HashAlgorithm
+    $Content = -join (Get-Content -Path $Path)
+    $contentsHash = Get-StringHash -String $Content -HashAlgorithm $HashAlgorithm
 
     $sWeb = @{
         Uri = "$($script:EndPoint)/register"
@@ -104,7 +104,10 @@ Function Register-CKFile
     $response = Invoke-RestAPI -Arguments $sWeb
     $entityId = $response | ConvertFrom-Json
 
-    return @{'entityId' = $entityId; 'hash' = $contentsHash }
+    New-Object -TypeName PSObject -Property @{
+        entityId = $entityId
+        hash = $contentsHash
+    }
 }
 
 Function Test-CKFile()
@@ -117,7 +120,8 @@ Function Test-CKFile()
         [string]$EntityId,
         [string]$Storage = "concord",
         [string]$HashAlgorithm = "SHA256",
-        [int]$SkipLine = 0
+        [int]$SkipLine = 0,
+        [switch]$Abort
     )
 
     if ($null -eq $script:ChainKitToken)
@@ -126,8 +130,8 @@ Function Test-CKFile()
         return
     }
 
-    $content = Get-Content -Path $Path |
-    Where-Object { $_.ReadCount -ne $SkipLine -and ($_.ReadCount -eq 1 -and $_ -notmatch 'Test-CKFile') }
+    $content = -join (Get-Content -Path $Path |
+        Where-Object { $_.ReadCount -ne $SkipLine -and $_ -notmatch "<# CK #>|#region|#endregion" })
     $contentHash = Get-StringHash -String $content -HashAlgorithm $HashAlgorithm
 
     if ( $contentHash -ne $hash )
@@ -144,12 +148,11 @@ Function Test-CKFile()
         }
     }
     $response = Invoke-RestAPI -Arguments $sWeb
-    $status = $response | ConvertFrom-Json
-    $status
-    #    if ( ! $status )
-    #    {
-    #        Throw "Script $($Path) does not exist on Blockchain."
-    #    }
+    $verified = $response | ConvertFrom-Json
+    if ($Abort -and -not $verified)
+    {
+        Throw "File did not pass verification"
+    }
 }
 
 Function Protect-CKScript ()
@@ -158,8 +161,29 @@ Function Protect-CKScript ()
     param(
         [STRING]$Path,
         [string]$Storage = 'concord',
-        [string]$HashAlgorithm = "SHA256"
+        [string]$HashAlgorithm = "SHA256",
+        [string]$Prefix = 'Secure'
     )
+
+    $ckCode = @'
+#region ChainKit
+<# CK #>    Try {
+<# CK #>        `$tCK = @{
+<# CK #>            Path = '$newFile'
+<# CK #>            Hash = '$($result.hash)'
+<# CK #>            EntityId = '$($result.entityId)'
+<# CK #>            Storage = '$Storage'
+<# CK #>            HashAlgorithm = '$HashAlgorithm'
+<# CK #>            Abort = `$true
+<# CK #>        }
+<# CK #>        Test-CKFile @tCK
+<# CK #>    }
+<# CK #>    Catch {
+<# CK #>        Throw "Unable to verify script"
+<# CK #>    }
+#endregion
+
+'@
 
     if ($null -eq $script:ChainKitToken)
     {
@@ -167,23 +191,16 @@ Function Protect-CKScript ()
         return
     }
 
-    $returnValues = @{ }
-
     $dir = Split-Path -Path $Path
     $file = Split-Path -Path $Path -leaf
-    $newFile = "$dir\Secure-$file"
+    $newFile = "$dir\$Prefix-$file"
 
-    $returnValue = Register-CKFile -Path $Path -Storage $Storage -HashAlgorithm $HashAlgorithm
+    $result = Register-CKFile -Path $Path -Storage $Storage -HashAlgorithm $HashAlgorithm
 
-    $fields = "Test-CKFile -Path $($Path)",
-    "-Hash $($returnValue.hash)",
-    "-EntityId $($returnValue.entityId)",
-    "-Storage $Storage",
-    "-HashAlgorithm $HashAlgorithm"
-    $line = $fields -join ' '
+    $line = $ExecutionContext.InvokeCommand.ExpandString($ckCode)
     ($line, (Get-Content -Path $Path)) | Out-File -FilePath $newFile
 
-    $returnValues.Add( $newFile, $returnValue )
+    $result | Add-Member -Name FileName -Value $newFile -MemberType NoteProperty
 
-    return $returnValues
+    return $result
 }
