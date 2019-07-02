@@ -8,7 +8,7 @@
 # }
 #
 
-$data = Get-Content -Path .\sample-2.json | ConvertFrom-Json
+$data = Get-Content -Path .\vcenter.json | ConvertFrom-Json
 
 Connect-VIServer -Server $data.vCenter | Out-Null
 

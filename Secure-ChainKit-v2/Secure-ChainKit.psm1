@@ -86,13 +86,13 @@ Function Register-CKFile
     }
 
     $Content = -join (Get-Content -Path $Path)
-    $contentsHash = Get-StringHash -String $Content -HashAlgorithm $HashAlgorithm
+    $contentHash = Get-StringHash -String $Content -HashAlgorithm $HashAlgorithm
 
     $sWeb = @{
         Uri = "$($script:EndPoint)/register"
         Method = 'POST'
         Body = @{
-            hash = $contentsHash
+            hash = $contentHash
             description = "Hardened Script: {0}" -f $Path
             storage = $Storage
         } | ConvertTo-Json
@@ -106,7 +106,7 @@ Function Register-CKFile
 
     New-Object -TypeName PSObject -Property @{
         entityId = $entityId
-        hash = $contentsHash
+        hash = $contentHash
     }
 }
 
@@ -131,7 +131,7 @@ Function Test-CKFile()
     }
 
     $content = -join (Get-Content -Path $Path |
-        Where-Object { $_.ReadCount -ne $SkipLine -and $_ -notmatch "<# CK #>|#region|#endregion" })
+        Where-Object { $_.ReadCount -ne $SkipLine -and $_ -notmatch "<# CK #>|#region CK|#endregion CK" })
     $contentHash = Get-StringHash -String $content -HashAlgorithm $HashAlgorithm
 
     if ( $contentHash -ne $hash )
@@ -166,7 +166,7 @@ Function Protect-CKScript ()
     )
 
     $ckCode = @'
-#region ChainKit
+#region CK
 <# CK #>    Try {
 <# CK #>        `$tCK = @{
 <# CK #>            Path = '$newFile'
@@ -181,7 +181,7 @@ Function Protect-CKScript ()
 <# CK #>    Catch {
 <# CK #>        Throw "Unable to verify script"
 <# CK #>    }
-#endregion
+#endregion CK
 
 '@
 
