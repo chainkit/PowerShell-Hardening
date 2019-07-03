@@ -1,4 +1,4 @@
-$script:EndPoint = "https://api.pencildata.com"
+$script:EndPoint = "https://api.chainkit.com"
 
 Function Get-StringHash
 {
@@ -74,7 +74,7 @@ Function Register-CKFile
     [cmdletbinding()]
     param(
         [string]$Path,
-        [string]$Storage = 'concord',
+        [string]$Storage = 'vmware',
         [string]$HashAlgorithm = "SHA256",
         [string]$Token = $script:Token
     )
@@ -118,9 +118,8 @@ Function Test-CKFile()
         [string]$Path,
         [string]$Hash,
         [string]$EntityId,
-        [string]$Storage = "concord",
+        [string]$Storage = "vmware",
         [string]$HashAlgorithm = "SHA256",
-        [int]$SkipLine = 0,
         [switch]$Abort
     )
 
@@ -131,7 +130,7 @@ Function Test-CKFile()
     }
 
     $content = -join (Get-Content -Path $Path |
-        Where-Object { $_.ReadCount -ne $SkipLine -and $_ -notmatch "<# CK #>|#region CK|#endregion CK" })
+        Where-Object { $_ -notmatch "<# CK #>|#region CK|#endregion CK" })
     $contentHash = Get-StringHash -String $content -HashAlgorithm $HashAlgorithm
 
     if ( $contentHash -ne $hash )
@@ -160,7 +159,7 @@ Function Protect-CKScript ()
     [cmdletbinding()]
     param(
         [STRING]$Path,
-        [string]$Storage = 'concord',
+        [string]$Storage = 'vmware',
         [string]$HashAlgorithm = "SHA256",
         [string]$Prefix = 'Secure'
     )
