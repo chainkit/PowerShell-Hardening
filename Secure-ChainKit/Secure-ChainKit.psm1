@@ -1,4 +1,26 @@
-$script:EndPoint = "https://api.chainkit.com"
+$script:EndPoint = 'https://api.chainkit.com'
+$script:defaultStorage = 'vmware'
+$script:defaultHashAlgorithm = 'HASH256'
+$script:defaultScriptPrefix = 'Secure'
+$script:defaultChainKitCode = @'
+#region CK
+<# CK #>    Try {
+<# CK #>        `$tCK = @{
+<# CK #>            Path = '$newFile'
+<# CK #>            Hash = '$($result.hash)'
+<# CK #>            EntityId = '$($result.entityId)'
+<# CK #>            Storage = '$Storage'
+<# CK #>            HashAlgorithm = '$HashAlgorithm'
+<# CK #>            Abort = `$true
+<# CK #>        }
+<# CK #>        Test-CKFile @tCK
+<# CK #>    }
+<# CK #>    Catch {
+<# CK #>        Throw "Unable to verify script"
+<# CK #>    }
+#endregion CK
+
+'@
 
 Function Get-StringHash
 {
@@ -42,6 +64,7 @@ Function Connect-CKService
 {
     [cmdletbinding()]
     param(
+        [parameter(Mandatory = $true)]
         [PSCredential]$Credential
     )
 
@@ -73,9 +96,10 @@ Function Register-CKFile
 {
     [cmdletbinding()]
     param(
+        [parameter(Mandatory = $true)]
         [string]$Path,
-        [string]$Storage = 'vmware',
-        [string]$HashAlgorithm = "SHA256",
+        [string]$Storage = $script:defaultStorage,
+        [string]$HashAlgorithm = $script:defaultHashAlgorithm,
         [string]$Token = $script:Token
     )
 
@@ -116,10 +140,12 @@ Function Test-CKFile()
     param(
         [parameter(Mandatory = $true)]
         [string]$Path,
+        [parameter(Mandatory = $true)]
         [string]$Hash,
+        [parameter(Mandatory = $true)]
         [string]$EntityId,
-        [string]$Storage = "vmware",
-        [string]$HashAlgorithm = "SHA256",
+        [string]$Storage = $script:defaultStorage,
+        [string]$HashAlgorithm = $script:defaultHashAlgorithm,
         [switch]$Abort
     )
 
@@ -152,37 +178,22 @@ Function Test-CKFile()
     {
         Throw "File did not pass verification"
     }
+    elseif (-not $verified)
+    {
+        Write-Error "File did not pass verification"
+    }
 }
 
 Function Protect-CKScript ()
 {
     [cmdletbinding()]
     param(
-        [STRING]$Path,
-        [string]$Storage = 'vmware',
-        [string]$HashAlgorithm = "SHA256",
-        [string]$Prefix = 'Secure'
+        [parameter(Mandatory = $true)]
+        [string]$Path,
+        [string]$Storage = $script:defaultStorage,
+        [string]$HashAlgorithm = $script:defaultHashAlgorithm,
+        [string]$Prefix = $script:defaultScriptPrefix
     )
-
-    $ckCode = @'
-#region CK
-<# CK #>    Try {
-<# CK #>        `$tCK = @{
-<# CK #>            Path = '$newFile'
-<# CK #>            Hash = '$($result.hash)'
-<# CK #>            EntityId = '$($result.entityId)'
-<# CK #>            Storage = '$Storage'
-<# CK #>            HashAlgorithm = '$HashAlgorithm'
-<# CK #>            Abort = `$true
-<# CK #>        }
-<# CK #>        Test-CKFile @tCK
-<# CK #>    }
-<# CK #>    Catch {
-<# CK #>        Throw "Unable to verify script"
-<# CK #>    }
-#endregion CK
-
-'@
 
     if ($null -eq $script:ChainKitToken)
     {
@@ -196,7 +207,7 @@ Function Protect-CKScript ()
 
     $result = Register-CKFile -Path $Path -Storage $Storage -HashAlgorithm $HashAlgorithm
 
-    $line = $ExecutionContext.InvokeCommand.ExpandString($ckCode)
+    $line = $ExecutionContext.InvokeCommand.ExpandString($script:defaultChainKitCode)
     ($line, (Get-Content -Path $Path)) | Out-File -FilePath $newFile
 
     $result | Add-Member -Name FileName -Value $newFile -MemberType NoteProperty
