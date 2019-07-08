@@ -1,6 +1,6 @@
 $script:EndPoint = 'https://api.chainkit.com'
 $script:defaultStorage = 'vmware'
-$script:defaultHashAlgorithm = 'HASH256'
+$script:defaultHashAlgorithm = 'SHA256'
 $script:defaultScriptPrefix = 'Secure'
 $script:defaultChainKitCode = @'
 #region CK
