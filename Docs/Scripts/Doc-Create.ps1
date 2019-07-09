@@ -1,1 +1,2 @@
-New-ExternalHelp .\docs -OutputPath Secure-Chainkit-v2\en-US\
+# Generate External Help files
+New-ExternalHelp .\Docs -OutputPath Secure-Chainkit\en-US\

@@ -1,8 +1,8 @@
 # Generate Markdown Help files
-Import-Module .\Secure-ChainKit-v2\Secure-ChainKit.psm1 -Force
-New-MarkdownHelp -Module Secure-ChainKit -OutputFolder .\docs
+Import-Module .\Secure-ChainKit\Secure-ChainKit.psm1 -Force
+New-MarkdownHelp -Module Secure-ChainKit -OutputFolder .\Docs
 
 # Edit generated files
 
-# Generate Help files
-#New-ExternalHelp .\docs -OutputPath en-US\
+# Generate External Help files
+# New-ExternalHelp .\Docs -OutputPath Secure-Chainkit\en-US\

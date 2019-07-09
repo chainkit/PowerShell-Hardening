@@ -1,4 +1,4 @@
-# PowerShell Hardening Demo
+# PowerShell Secure / Self-Verifying Library Demo
 
 Copy the complete module folder **Secure-ChainKit** to one of the module folders defined in `$env:PSModulePath`
 
