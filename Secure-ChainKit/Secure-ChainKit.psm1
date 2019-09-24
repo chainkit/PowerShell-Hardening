@@ -126,7 +126,8 @@ Function Register-CKFile
         }
     }
     $response = Invoke-RestAPI -Arguments $sWeb
-    $entityId = $response | ConvertFrom-Json
+    $responseBody = $response | ConvertFrom-Json
+    $entityId = $responseBody.assetId
 
     New-Object -TypeName PSObject -Property @{
         entityId = $entityId
@@ -173,7 +174,9 @@ Function Test-CKFile()
         }
     }
     $response = Invoke-RestAPI -Arguments $sWeb
-    $verified = $response | ConvertFrom-Json
+    $responseBody = $response | ConvertFrom-Json
+    $verified = $responseBody.verified
+
     if ($Abort -and -not $verified)
     {
         Throw "File did not pass verification"
